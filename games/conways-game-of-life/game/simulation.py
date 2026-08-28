@@ -2,9 +2,9 @@ from game.creature import Creature
 
 
 class Simulation:
-    def __init__(self, world):
+    def __init__(self, world, statistics):
         self.world = world
-        self.generation = 0
+        self.statistics = statistics
 
     def count_neighbors(self, x, y):
         count = 0
@@ -12,14 +12,12 @@ class Simulation:
         for dy in range(-1, 2):
             for dx in range(-1, 2):
 
-                # Don't count the cell itself
                 if dx == 0 and dy == 0:
                     continue
 
                 nx = x + dx
                 ny = y + dy
 
-                # Ignore cells outside the world
                 if nx < 0 or nx >= self.world.width:
                     continue
 
@@ -40,15 +38,28 @@ class Simulation:
         for y in range(self.world.height):
             for x in range(self.world.width):
 
+                creature = self.world.get_creature(x, y)
                 neighbors = self.count_neighbors(x, y)
-                alive = self.world.is_alive(x, y)
 
-                # Conway's Game of Life rules
-                if alive and neighbors in (2, 3):
-                    new_grid[y][x] = self.world.get_creature(x, y)
+                # Existing creature survives
+                if creature is not None and neighbors in (2, 3):
 
-                elif not alive and neighbors == 3:
-                    new_grid[y][x] = Creature()
+                    creature.update()
+
+                    new_grid[y][x] = creature
+
+                # Existing creature dies
+                elif creature is not None:
+
+                    self.statistics.record_death(creature)
+
+                # New creature is born
+                elif creature is None and neighbors == 3:
+
+                    new_creature = Creature()
+
+                    self.statistics.record_birth(new_creature)
+
+                    new_grid[y][x] = new_creature
 
         self.world.grid = new_grid
-        self.generation += 1
