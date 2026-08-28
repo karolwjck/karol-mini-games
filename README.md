@@ -8,5 +8,5 @@ Built for fun, learning, and experimenting with different programming concepts a
 # Games
 | Game                                           | Genre      | Game Development / Mechanics                                                      | Technology | Status         |
 | ---------------------------------------------- | ---------- | --------------------------------------------------------------------------------- | ---------- | -------------- |
-| [Conway's Game of Life](./games/game-of-life/) | Simulation | Cellular automata, grid systems, simulation loops, emergent behaviour, statistics | Python/Pygame     | In Progress |
+| [Conway's Game of Life](./games/conways-game-of-life/) | Simulation | Cellular automata, grid systems, simulation loops, emergent behaviour, statistics | Python/Pygame     | In Progress |
 | | | | | |
