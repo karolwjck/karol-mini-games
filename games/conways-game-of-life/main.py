@@ -13,25 +13,50 @@ from game.config import (
 from game.world import World
 from game.simulation import Simulation
 from game.creature import Creature
+from game.statistics import Statistics
+
 from ui.game_view import GameView
+from ui.statistics_view import StatisticsView
 
 
 def main():
+
     pygame.init()
 
     screen = pygame.display.set_mode(
         (WINDOW_WIDTH, WINDOW_HEIGHT)
     )
 
-    pygame.display.set_caption("Game of Life")
+    pygame.display.set_caption(
+        "Game of Life"
+    )
 
     clock = pygame.time.Clock()
 
-    world = World(GRID_WIDTH, GRID_HEIGHT)
-    simulation = Simulation(world)
-    game_view = GameView(screen, world)
+    world = World(
+        GRID_WIDTH,
+        GRID_HEIGHT,
+    )
 
-    # Create a simple glider
+    statistics = Statistics()
+
+    simulation = Simulation(
+        world,
+        statistics,
+    )
+
+    game_view = GameView(
+        screen,
+        world,
+    )
+
+    statistics_view = StatisticsView(
+        screen,
+        statistics,
+        world,
+    )
+
+    # Initial glider
     glider = [
         (10, 10),
         (11, 11),
@@ -41,7 +66,18 @@ def main():
     ]
 
     for x, y in glider:
-        world.set_creature(x, y, Creature())
+
+        creature = Creature()
+
+        world.set_creature(
+            x,
+            y,
+            creature,
+        )
+
+        statistics.record_birth(
+            creature
+        )
 
     running = True
     paused = False
@@ -56,40 +92,68 @@ def main():
 
             if event.type == pygame.QUIT:
                 running = False
-
-            # Toggle cells with mouse
+                
             elif event.type == pygame.MOUSEBUTTONDOWN:
 
-                mouse_x, mouse_y = event.pos
+                if event.button == 1:
+                    mouse_x, mouse_y = event.pos
 
-                grid_x = mouse_x // CELL_SIZE
-                grid_y = mouse_y // CELL_SIZE
+                    grid_x = mouse_x // CELL_SIZE
+                    grid_y = mouse_y // CELL_SIZE
 
-                if (
-                    0 <= grid_x < world.width
-                    and 0 <= grid_y < world.height
-                ):
+                    if (
+                        0 <= grid_x < world.width
+                        and 0 <= grid_y < world.height
+                    ):
 
-                    if world.is_alive(grid_x, grid_y):
-                        world.set_creature(
-                            grid_x,
-                            grid_y,
-                            None
-                        )
-                    else:
-                        world.set_creature(
-                            grid_x,
-                            grid_y,
-                            Creature()
-                        )
+                        if not world.is_alive(grid_x, grid_y):
 
-            # Space = pause/unpause
+                            creature = Creature()
+
+                            world.set_creature(
+                                grid_x,
+                                grid_y,
+                                creature,
+                            )
+
+                            statistics.record_birth(creature)
+                            statistics.update_peak_population(world)
+
+
+            elif event.type == pygame.MOUSEMOTION:
+
+                # Check whether left mouse button is being held
+                if pygame.mouse.get_pressed()[0]:
+
+                    mouse_x, mouse_y = event.pos
+
+                    grid_x = mouse_x // CELL_SIZE
+                    grid_y = mouse_y // CELL_SIZE
+
+                    if (
+                        0 <= grid_x < world.width
+                        and 0 <= grid_y < world.height
+                    ):
+
+                        # Only add a creature if the cell is empty
+                        if not world.is_alive(grid_x, grid_y):
+
+                            creature = Creature()
+
+                            world.set_creature(
+                                grid_x,
+                                grid_y,
+                                creature,
+                            )
+
+                            statistics.record_birth(creature)
+                            statistics.update_peak_population(world)
+
             elif event.type == pygame.KEYDOWN:
 
                 if event.key == pygame.K_SPACE:
                     paused = not paused
 
-        # Update simulation
         if not paused:
 
             generation_timer += delta_time
@@ -99,11 +163,19 @@ def main():
             )
 
             if generation_timer >= generation_interval:
+
                 simulation.update()
+
+                statistics.update(
+                    world,
+                    generation_interval,
+                )
+
                 generation_timer = 0
 
-        # Draw
         game_view.draw()
+
+        statistics_view.draw()
 
         pygame.display.flip()
 
