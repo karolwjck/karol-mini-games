@@ -84,3 +84,11 @@ class Statistics:
         return sum(
             creature.age for creature in creatures
         ) / len(creatures)
+
+    def update_peak_population(self, world):
+        population = self.get_population(world)
+
+        self.peak_population = max(
+            self.peak_population,
+            population
+        )
